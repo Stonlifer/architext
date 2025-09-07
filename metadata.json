@@ -1,0 +1,5 @@
+{
+  "name": "Architext AI Floor Plan Generator",
+  "description": "An AI-powered application that generates and refines floor plans through a conversational interface. Users can answer initial questions, iteratively adjust the design, and generate photorealistic mockups of rooms.",
+  "requestFramePermissions": []
+}
