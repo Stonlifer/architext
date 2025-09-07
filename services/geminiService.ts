@@ -3,55 +3,103 @@ import { FloorPlan, QuestionnaireAnswers, Room } from "../types";
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
+const pointSchema = {
+    type: Type.OBJECT,
+    properties: {
+        x: { type: Type.NUMBER },
+        y: { type: Type.NUMBER }
+    },
+    required: ['x', 'y']
+};
+
+const furnitureSchema = {
+    type: Type.OBJECT,
+    properties: {
+        id: { type: Type.STRING, description: "Unique ID for the furniture item." },
+        type: { type: Type.STRING, description: "Type of furniture, e.g., 'sofa', 'bed', 'dining_table'." },
+        position: pointSchema,
+        width: { type: Type.NUMBER },
+        height: { type: Type.NUMBER },
+        rotation: { type: Type.NUMBER, description: "Clockwise rotation in degrees." },
+    },
+    required: ['id', 'type', 'position', 'width', 'height', 'rotation']
+};
+
+const doorSchema = {
+    type: Type.OBJECT,
+    description: "A door on a wall segment defined by two consecutive polygon vertices.",
+    properties: {
+        wallStart: pointSchema,
+        wallEnd: pointSchema,
+    },
+    required: ['wallStart', 'wallEnd']
+};
+
+const windowSchema = {
+    type: Type.OBJECT,
+    description: "A window on a wall segment defined by two consecutive polygon vertices.",
+    properties: {
+        wallStart: pointSchema,
+        wallEnd: pointSchema,
+    },
+    required: ['wallStart', 'wallEnd']
+};
+
+const roomSchema = {
+    type: Type.OBJECT,
+    properties: {
+        id: { type: Type.STRING, description: "Unique identifier for the room, e.g., 'room-1'." },
+        name: { type: Type.STRING, description: "Descriptive name of the room, e.g., 'Master Bedroom'." },
+        type: { type: Type.STRING, description: "Type of the room, e.g., 'Bedroom'." },
+        polygon: {
+            type: Type.ARRAY,
+            description: "An array of {x, y} points defining the room's inner shape.",
+            items: pointSchema,
+        },
+        labelPosition: {
+            type: Type.OBJECT,
+            description: "An {x, y} point for placing the room's label, usually near the center.",
+            properties: {
+                x: { type: Type.NUMBER },
+                y: { type: Type.NUMBER }
+            }
+        },
+        doors: { type: Type.ARRAY, description: "Doors belonging to this room.", items: doorSchema },
+        windows: { type: Type.ARRAY, description: "Windows belonging to this room.", items: windowSchema },
+        furniture: { type: Type.ARRAY, description: "Furniture inside this room.", items: furnitureSchema },
+    },
+    required: ['id', 'name', 'type', 'polygon', 'labelPosition', 'doors', 'windows', 'furniture']
+};
+
+
 const floorPlanSchema = {
     type: Type.OBJECT,
     properties: {
         totalWidth: { type: Type.NUMBER, description: "Total width of the entire floor plan canvas." },
         totalHeight: { type: Type.NUMBER, description: "Total height of the entire floor plan canvas." },
+        wallThickness: { type: Type.NUMBER, description: "Global thickness for all walls. A good value is 0.8." },
         rooms: {
             type: Type.ARRAY,
-            items: {
-                type: Type.OBJECT,
-                properties: {
-                    id: { type: Type.STRING, description: "Unique identifier for the room, e.g., 'room-1'." },
-                    name: { type: Type.STRING, description: "Descriptive name of the room, e.g., 'Master Bedroom'." },
-                    type: { type: Type.STRING, description: "Type of the room, e.g., 'Bedroom'." },
-                    polygon: {
-                        type: Type.ARRAY,
-                        description: "An array of {x, y} points defining the room's shape.",
-                        items: {
-                            type: Type.OBJECT,
-                            properties: {
-                                x: { type: Type.NUMBER },
-                                y: { type: Type.NUMBER }
-                            },
-                        },
-                    },
-                    labelPosition: {
-                        type: Type.OBJECT,
-                        description: "An {x, y} point for placing the room's label, usually near the center.",
-                        properties: {
-                            x: { type: Type.NUMBER },
-                            y: { type: Type.NUMBER }
-                        }
-                    }
-                },
-                required: ['id', 'name', 'type', 'polygon', 'labelPosition'],
-            }
+            items: roomSchema
         }
     },
-    required: ['totalWidth', 'totalHeight', 'rooms'],
+    required: ['totalWidth', 'totalHeight', 'wallThickness', 'rooms'],
 };
 
-const getSystemInstruction = () => `You are an expert AI architect. Your task is to generate and modify residential floor plans based on user requirements.
+const getSystemInstruction = () => `You are an expert AI architect specializing in creating detailed and professional floor plans.
 - The output MUST be a valid JSON object that strictly follows the provided schema.
-- The origin (0,0) is the top-left corner.
-- All coordinates must be positive and within the totalWidth and totalHeight boundaries.
-- Ensure room polygons are closed and do not overlap in impossible ways.
-- Label positions should be calculated to be inside their respective polygons.
+- Create a logical and functional layout.
+- The origin (0,0) is the top-left corner. All coordinates must be positive.
+- Room polygons define the inner boundary of the rooms. They should not overlap.
+- For walls, use the specified 'wallThickness'.
+- Doors should be placed on a wall segment shared between two rooms or a room and the exterior. 'wallStart' and 'wallEnd' for a door MUST exactly match two consecutive vertices of its room's polygon.
+- Windows should be placed on exterior walls. 'wallStart' and 'wallEnd' for a window MUST exactly match two consecutive vertices of its room's polygon.
+- Include essential and logically placed furniture for each room. Available furniture types are: 'sofa', 'armchair', 'bed', 'dining_table', 'chair', 'kitchen_counter', 'sink', 'stove', 'toilet', 'bathtub', 'shower', 'wardrobe', 'plant', 'desk', 'tv_stand', 'fridge', 'washing_machine', 'rug'.
+- For stairs, create a room with type 'Stairs'.
 - Do not include any text, notes, or explanations outside of the JSON object.
-- When modifying a plan, maintain the existing room 'id' values.
+- When modifying a plan, maintain the existing room and furniture 'id' values where possible.
 `;
+
 
 export const generateInitialPlan = async (answers: QuestionnaireAnswers): Promise<FloorPlan> => {
     const prompt = `Generate a floor plan with the following requirements:
@@ -61,11 +109,11 @@ export const generateInitialPlan = async (answers: QuestionnaireAnswers): Promis
 - Bathrooms: ${answers.bathrooms}
 - Stories: ${answers.stories}
 - Features: ${answers.features.join(', ')}
-- The total width and height should be roughly proportional to a standard house shape. A 60x40 or 70x50 aspect ratio is a good starting point.
+- The total width and height should be roughly proportional to a standard house shape.
 `;
 
     const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
+        model: "gemini-2.5-pro",
         contents: prompt,
         config: {
             systemInstruction: getSystemInstruction(),
@@ -94,7 +142,7 @@ Return only the updated and complete Floor Plan JSON.
 `;
 
     const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
+        model: "gemini-2.5-pro",
         contents: prompt,
         config: {
             systemInstruction: getSystemInstruction(),
@@ -112,13 +160,14 @@ Return only the updated and complete Floor Plan JSON.
     }
 };
 
-export const generateRenderedView = async (floorplanImageBase64: string): Promise<string> => {
-    const prompt = `You are a precise image editing AI. Your task is to fill in the empty (white) spaces of the provided floor plan wireframe image with 2D textures.
-- **ABSOLUTELY DO NOT change, move, or alter the existing black lines (the walls) in any way.** The output image's black lines must be pixel-perfect identical to the input.
-- The output image dimensions MUST be exactly the same as the input image dimensions.
-- For the areas INSIDE the black lines (the rooms), fill them with simple, flat, top-down 2D architectural textures. Use wood patterns for living areas, bedrooms, and hallways. Use tile patterns for kitchens and bathrooms.
-- For the area OUTSIDE the black lines, fill it with a simple, flat, top-down green grass texture.
-- Do not add furniture, shadows, 3D effects, or any perspective. The result must be a clean, 2D "colored-in" version of the wireframe.`;
+export const generateRenderedView = async (floorplanImageBase64: string, plan: FloorPlan): Promise<string> => {
+    const prompt = `
+Here is the structural data for the floor plan in JSON format. Use this to understand the room types, dimensions, and layout:
+${JSON.stringify(plan, null, 2)}
+
+Based on the wireframe image and the JSON data, please perform the following:
+1.  Fill each room with appropriate furniture, fixtures, and decor that match its designated type (e.g., beds in bedrooms, sofas in living rooms, appliances in kitchens).
+2.  The final output should be ONLY the rendered image, matching the input wireframe's boundaries perfectly. Do not add any text or labels on the image.`;
 
     const imagePart = {
         inlineData: {

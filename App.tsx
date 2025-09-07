@@ -5,6 +5,7 @@ import { FloorPlan, QuestionnaireAnswers } from './types';
 import { generateInitialPlan } from './services/geminiService';
 import { LogoIcon } from './components/icons/LogoIcon';
 import { RobotIcon } from './components/icons/RobotIcon';
+import { mockFloorPlan } from './data/mockFloorPlan';
 
 type AppState = 'questionnaire' | 'generating' | 'designing';
 
@@ -33,16 +34,24 @@ const App: React.FC = () => {
     setAppState('questionnaire');
   }
 
+  const handleUseMockPlan = useCallback(() => {
+    setFloorPlan(mockFloorPlan);
+    setAppState('designing');
+  }, []);
+
   const renderContent = () => {
     switch (appState) {
       case 'questionnaire':
-        return <Questionnaire onSubmit={handleQuestionnaireSubmit} error={error} />;
+        return <Questionnaire onSubmit={handleQuestionnaireSubmit} error={error} onUseMock={handleUseMockPlan} />;
       case 'generating':
         return (
           <div className="flex flex-col items-center justify-center h-full text-white animate-fade-in">
             <RobotIcon className="w-24 h-24 text-brand-secondary animate-pulse-slow" />
             <h2 className="mt-4 text-2xl font-semibold">Our AI Architect is Sketching...</h2>
-            <p className="mt-2 text-lg text-gray-400">Crafting a unique floor plan based on your vision.</p>
+            <p className="mt-2 text-lg text-gray-400 mb-6">Crafting a unique floor plan based on your vision.</p>
+            <div className="w-full max-w-md bg-gray-700 rounded-full h-2.5">
+              <div className="bg-brand-secondary h-2.5 rounded-full animate-progress"></div>
+            </div>
           </div>
         );
       case 'designing':
@@ -68,7 +77,7 @@ const App: React.FC = () => {
            </button>
         )}
       </header>
-      <main className="flex-grow p-4 md:p-8 flex flex-col">
+      <main className="flex-grow p-4 md:p-8 flex flex-col mx-auto container">
         {renderContent()}
       </main>
     </div>

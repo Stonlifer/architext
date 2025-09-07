@@ -1,4 +1,3 @@
-
 import React, { useState, FormEvent } from 'react';
 import { questionnaireQuestions } from '../constants';
 import { QuestionnaireAnswers } from '../types';
@@ -7,9 +6,10 @@ import { LogoIcon } from './icons/LogoIcon';
 interface QuestionnaireProps {
   onSubmit: (answers: QuestionnaireAnswers) => void;
   error: string | null;
+  onUseMock: () => void;
 }
 
-const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, error }) => {
+const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, error, onUseMock }) => {
   const [answers, setAnswers] = useState<QuestionnaireAnswers>({
     style: 'Modern',
     sqft: '2000',
@@ -74,6 +74,18 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, error }) => {
           Generate My Floor Plan
         </button>
       </form>
+      <div className="relative flex py-5 items-center">
+        <div className="flex-grow border-t border-gray-600"></div>
+        <span className="flex-shrink mx-4 text-gray-400 text-sm">OR</span>
+        <div className="flex-grow border-t border-gray-600"></div>
+      </div>
+       <button
+            type="button"
+            onClick={onUseMock}
+            className="w-full text-center py-3 px-4 text-brand-accent bg-gray-900/80 border border-gray-700 rounded-lg hover:bg-gray-700/80 transition-colors duration-200"
+          >
+            Use a Mock Floor Plan to Start
+       </button>
     </div>
   );
 };
