@@ -2,7 +2,7 @@
 import React, { useState, FormEvent } from 'react';
 import { questionnaireQuestions } from '../constants';
 import { QuestionnaireAnswers } from '../types';
-import { SparklesIcon } from './icons/SparklesIcon';
+import { LogoIcon } from './icons/LogoIcon';
 
 interface QuestionnaireProps {
   onSubmit: (answers: QuestionnaireAnswers) => void;
@@ -70,7 +70,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, error }) => {
           </div>
         ))}
         <button type="submit" className="w-full flex items-center justify-center gap-2 bg-brand-secondary hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-lg transition-transform duration-200 hover:scale-105 shadow-lg">
-          <SparklesIcon className="w-5 h-5"/>
+          <LogoIcon className="w-5 h-5"/>
           Generate My Floor Plan
         </button>
       </form>

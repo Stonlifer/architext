@@ -112,31 +112,6 @@ Return only the updated and complete Floor Plan JSON.
     }
 };
 
-export const generateRoomMockup = async (room: Room, style: string): Promise<string> => {
-    const prompt = `Generate a photorealistic, eye-level interior design photo of a ${room.type} called "${room.name}".
-The architectural style is ${style}.
-The room should look inviting, well-lit, and professionally designed.
-Do not include any text or watermarks in the image.
-`;
-
-    const response = await ai.models.generateImages({
-        model: 'imagen-4.0-generate-001',
-        prompt: prompt,
-        config: {
-            numberOfImages: 1,
-            outputMimeType: 'image/jpeg',
-            aspectRatio: '16:9',
-        },
-    });
-    
-    if (response.generatedImages && response.generatedImages.length > 0) {
-        const base64ImageBytes = response.generatedImages[0].image.imageBytes;
-        return `data:image/jpeg;base64,${base64ImageBytes}`;
-    }
-    
-    throw new Error("Image generation failed.");
-};
-
 export const generateRenderedView = async (floorplanImageBase64: string): Promise<string> => {
     const prompt = `You are a precise image editing AI. Your task is to fill in the empty (white) spaces of the provided floor plan wireframe image with 2D textures.
 - **ABSOLUTELY DO NOT change, move, or alter the existing black lines (the walls) in any way.** The output image's black lines must be pixel-perfect identical to the input.

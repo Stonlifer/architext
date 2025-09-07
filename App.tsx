@@ -1,10 +1,9 @@
-
 import React, { useState, useCallback } from 'react';
 import Questionnaire from './components/Questionnaire';
 import FloorPlanDesigner from './components/FloorPlanDesigner';
 import { FloorPlan, QuestionnaireAnswers } from './types';
 import { generateInitialPlan } from './services/geminiService';
-import { SparklesIcon } from './components/icons/SparklesIcon';
+import { LogoIcon } from './components/icons/LogoIcon';
 import { RobotIcon } from './components/icons/RobotIcon';
 
 type AppState = 'questionnaire' | 'generating' | 'designing';
@@ -57,7 +56,7 @@ const App: React.FC = () => {
     <div className="bg-brand-dark min-h-screen text-brand-light font-sans flex flex-col">
        <header className="w-full bg-gray-900/50 backdrop-blur-sm border-b border-gray-700 p-4 flex items-center justify-between shadow-lg sticky top-0 z-50">
         <div className="flex items-center gap-3">
-          <SparklesIcon className="w-8 h-8 text-brand-accent" />
+          <LogoIcon className="w-8 h-8 text-brand-accent" />
           <h1 className="text-2xl font-bold tracking-tight text-white">Architext AI</h1>
         </div>
         {appState === 'designing' && (

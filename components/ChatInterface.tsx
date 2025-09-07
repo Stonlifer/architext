@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { RobotIcon } from './icons/RobotIcon';
-import { SparklesIcon } from './icons/SparklesIcon';
+import { LogoIcon } from './icons/LogoIcon';
 
 interface ChatInterfaceProps {
   onSendMessage: (message: string) => void;
@@ -81,7 +81,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ onSendMessage, isLoading,
           disabled={isLoading}
         />
         <button onClick={handleSend} disabled={isLoading || !input.trim()} className="bg-brand-secondary text-white font-bold p-2 rounded-lg disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors flex items-center justify-center w-10 h-10">
-          <SparklesIcon className="w-5 h-5"/>
+          <LogoIcon className="w-5 h-5"/>
         </button>
       </div>
     </div>

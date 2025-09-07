@@ -1,11 +1,9 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { FloorPlan, Room } from '../types';
+import { FloorPlan } from '../types';
 import FloorPlanViewer from './FloorPlanViewer';
 import ChatInterface from './ChatInterface';
-import MockupViewer from './MockupViewer';
-import { modifyPlan, generateRoomMockup, generateRenderedView } from '../services/geminiService';
-import { CameraIcon } from './icons/CameraIcon';
-import { SparklesIcon } from './icons/SparklesIcon';
+import { modifyPlan, generateRenderedView } from '../services/geminiService';
+import { LogoIcon } from './icons/LogoIcon';
 import { LayersIcon } from './icons/TerrainIcon';
 
 interface FloorPlanDesignerProps {
@@ -19,7 +17,6 @@ const FloorPlanDesigner: React.FC<FloorPlanDesignerProps> = ({ initialPlan }) =>
   const [isGeneratingRender, setIsGeneratingRender] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
-  const [isMockupPanelOpen, setIsMockupPanelOpen] = useState<boolean>(false);
   const [renderedViewOverlay, setRenderedViewOverlay] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'wireframe' | 'rendered'>('wireframe');
   const svgRef = useRef<SVGSVGElement>(null);
@@ -102,8 +99,6 @@ const FloorPlanDesigner: React.FC<FloorPlanDesignerProps> = ({ initialPlan }) =>
   };
 
 
-  const selectedRoom = plan.rooms.find(r => r.id === selectedRoomId) || null;
-
   return (
     <div className="flex-grow grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in h-full overflow-hidden">
       <div className="lg:col-span-2 bg-gray-900/50 rounded-xl shadow-lg border border-gray-700 p-4 flex flex-col relative overflow-hidden">
@@ -124,15 +119,6 @@ const FloorPlanDesigner: React.FC<FloorPlanDesignerProps> = ({ initialPlan }) =>
                     <LayersIcon className="w-5 h-5" />
                     {isGeneratingRender ? 'Generating...' : 'Generate Rendered View'}
                 </button>
-                {selectedRoom && (
-                    <button
-                        onClick={() => setIsMockupPanelOpen(true)}
-                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-brand-primary hover:bg-blue-800 rounded-lg transition-colors"
-                    >
-                        <CameraIcon className="w-5 h-5" />
-                        Generate Mockup
-                    </button>
-                )}
             </div>
         </div>
         <div className="flex-grow flex items-center justify-center min-h-0 relative p-4">
@@ -154,7 +140,7 @@ const FloorPlanDesigner: React.FC<FloorPlanDesignerProps> = ({ initialPlan }) =>
         {(isLoading || isGeneratingRender) && (
             <div className="absolute inset-0 bg-brand-dark/70 backdrop-blur-sm flex items-center justify-center z-20">
               <div className="flex flex-col items-center">
-                <SparklesIcon className="w-12 h-12 text-brand-accent animate-pulse-slow" />
+                <LogoIcon className="w-12 h-12 text-brand-accent animate-pulse-slow" />
                 <p className="text-white mt-2">
                     {isLoading ? 'AI is updating your design...' : 'AI is generating rendered view...'}
                 </p>
@@ -170,14 +156,6 @@ const FloorPlanDesigner: React.FC<FloorPlanDesignerProps> = ({ initialPlan }) =>
           error={error}
         />
       </div>
-
-      {isMockupPanelOpen && selectedRoom && (
-        <MockupViewer
-            room={selectedRoom}
-            onClose={() => setIsMockupPanelOpen(false)}
-            generateImage={() => generateRoomMockup(selectedRoom, 'Modern')}
-        />
-      )}
     </div>
   );
 };
